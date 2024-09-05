@@ -315,3 +315,23 @@ class Article
 }
 
 ```
+
+## Deuxième migration
+
+    php bin/console make:migration
+
+ou
+
+    php bin/console m:mi
+
+puis
+
+    php bin/console doctrine:migrations:migrate
+
+ou
+
+    php bin/console d:m:m
+
+### On veut adapter la table à MySQL
+
+La documentation
