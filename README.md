@@ -144,3 +144,174 @@ templates/home/menu.html.twig
 ```
 
 About est similaire.
+
+## Création de notre `.env.local`
+
+Le fichier `.env` est le fichier de configuration qui est mis sur `git` et donc `github`
+
+C'est pour celà que nous allons le copier sous le nom de `.env.local`
+
+    cp .env .env.local
+
+Ouvrez `.env.local`
+
+Changez cette ligne
+
+    APP_ENV=dev
+    APP_SECRET=c6f06c078199d1f00879e1b9c146cddf
+en
+
+    APP_ENV=prod
+    APP_SECRET=une_autre_clef_secrete_sécurité
+
+si vous retapez  `php bin/console debug:route`
+
+Vous ne trouverez plus que les routes de production
+
+Dans le fichier `.env.local`
+
+Trouvez la ligne de base de données :
+
+```bash
+# ne pas oublier de remettre en dev
+APP_ENV=dev
+
+# DATABASE_URL="mysql://app:!ChangeMe!@127.0.0.1:3306/app?serverVersion=8.0.32&charset=utf8mb4"
+# DATABASE_URL="mysql://app:!ChangeMe!@127.0.0.1:3306/app?serverVersion=10.11.2-MariaDB&charset=utf8mb4"
+DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+```
+
+Commentez la ligne postgresql et décommentez la ligne mysql
+
+Passez vos paramètres de connexion dans l'ordre
+
+utilisateur:mot_de_passe@ip_serveur:port/nomdelaDB?options
+
+```bash
+DATABASE_URL="mysql://root:@127.0.0.1:3306/mysecondesymfonyc1?serverVersion=8.0.31&charset=utf8mb4"
+# DATABASE_URL="mysql://app:!ChangeMe!@127.0.0.1:3306/app?serverVersion=10.11.2-MariaDB&charset=utf8mb4"
+# DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
+```
+
+## Création de la DB
+
+    php bin/console doctrine:database:create
+
+La base de donnée devrait être créée si mysql.exe est activé ou Wamp démarré 
+
+## Création d'une entité
+
+Une entité est la représentation objet d'un élément de sauvegarde de données, dans notre cas, en choisissant mysql, il s'agira d'une table
+
+    php bin/console make:entity
+
+```bash
+ php bin/console make:entity
+
+ Class name of the entity to create or update (e.g. FierceGnome):
+ > Article
+Article
+
+ Add the ability to broadcast entity updates using Symfony UX Turbo? (yes/no) [no]:
+ > no
+
+ created: src/Entity/Article.php
+ created: src/Repository/ArticleRepository.php
+
+ New property name (press <return> to stop adding fields):
+ >
+  Success!
+  
+
+ php bin/console make:entity
+
+ Class name of the entity to create or update (e.g. GrumpyChef):
+ > Article
+Article
+
+ Your entity already exists! So let's add some new fields!
+
+ New property name (press <return> to stop adding fields):
+ > title
+
+ Field type (enter ? to see all types) [string]:
+ >
+
+
+ Field length [255]:
+ > 160
+
+ Can this field be null in the database (nullable) (yes/no) [no]:
+ >
+
+ updated: src/Entity/Article.php
+
+text
+
+```
+
+## Première migration
+
+    php bin/console make:migration
+
+    success :  created: migrations/Version20240903142811.php
+
+puis
+
+    php bin/console doctrine:migrations:migrate
+
+## Ajout de champs à l'entité `Article`
+
+On utilise maker pour ça
+
+    php bin/console make:entity Article
+
+```php
+// src/Entity/Article.php
+
+
+#...
+
+#[ORM\Entity(repositoryClass: ArticleRepository::class)]
+class Article
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    private ?int $id = null;
+
+    #[ORM\Column(length: 160)]
+    private ?string $title = null;
+
+    #[ORM\Column(type: Types::TEXT)]
+    private ?string $text = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $date_created = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $date_published = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?bool $published = null;
+
+    # ... getters and setters sauf pour les booleans
+
+    // ! pour boolean, is est rajouté pour le getter
+    // bug si on avait choisi isPublished -> isPublished
+    public function isPublished(): ?bool
+    {
+        return $this->published;
+    }
+    
+    // Le setter peut boguer si on avait choisi comme nom
+    // isPublished -> setPublished
+    public function setPublished(?bool $published): static
+    {
+        $this->published = $published;
+
+        return $this;
+    }
+}
+
+```
