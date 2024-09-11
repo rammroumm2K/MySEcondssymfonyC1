@@ -195,6 +195,11 @@ DATABASE_URL="mysql://root:@127.0.0.1:3306/mysecondesymfonyc1?serverVersion=8.0.
 
 ## Création de la DB
 
+Avec Doctrine, documentation :
+
+https://symfony.com/doc/current/doctrine.html
+
+
     php bin/console doctrine:database:create
 
 La base de donnée devrait être créée si mysql.exe est activé ou Wamp démarré 
@@ -334,4 +339,146 @@ ou
 
 ### On veut adapter la table à MySQL
 
-La documentation
+La documentation sur les colonnes (champs) dans `Doctrine` :
+
+https://www.doctrine-project.org/projects/doctrine-orm/en/3.2/reference/attributes-reference.html#attrref_column
+
+```php
+// src/Entity/Article.php
+
+#...
+
+#[ORM\Entity(repositoryClass: ArticleRepository::class)]
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(
+        options:[
+            "unsigned" => true,
+        ]
+    )]
+    private ?int $id = null;
+
+    #[ORM\Column(
+        length: 160
+    )]
+    private ?string $title = null;
+
+    #[ORM\Column(
+        type: Types::TEXT,
+    )]
+    private ?string $text = null;
+
+    #[ORM\Column(
+        type: Types::DATETIME_MUTABLE,
+        nullable: true,
+        options: [
+            'default' => 'CURRENT_TIMESTAMP',
+        ]
+    )]
+    private ?\DateTimeInterface $date_created = null;
+
+    #[ORM\Column(
+        type: Types::DATETIME_MUTABLE,
+        nullable: true
+    )]
+    private ?\DateTimeInterface $date_published = null;
+
+    #[ORM\Column(
+        nullable: true,
+        options: [
+            'default' => false,
+        ]
+    )]
+    private ?bool $published = null;
+    
+# Getters and setter
+
+```
+
+Vous pouvez migrer vers la DB, et voir le format colle à vos exigences MySQL en regardant la DB
+
+## Création du `CRUD` de `Article`
+
+    php bin/console make:crud
+
+Génère les fichiers de CRUD, vues et tests (si choisis)
+
+    created: src/Controller/AdminArticleController.php
+    created: src/Form/ArticleType.php
+    created: templates/admin_article/_delete_form.html.twig
+    created: templates/admin_article/_form.html.twig
+    created: templates/admin_article/edit.html.twig
+    created: templates/admin_article/index.html.twig
+    created: templates/admin_article/new.html.twig
+    created: templates/admin_article/show.html.twig
+    created: tests/Controller/ArticleControllerTest.php
+
+On a rajouté le chemin dans le `menu.html.twig`
+
+On l'a trouvé avec `php bin/console debug:route`
+
+```twig
+<nav>
+    {# on utilise path('nom_du_chemin') lorsqu'on veut un lien vers une page #}
+    <a href="{{ path('homepage') }}">Homepage</a>
+    <a href="{{ path('about_me') }}">About me</a>
+    <a href="{{ path('app_admin_article_index') }}">CRUD Article</a>
+</nav>
+```
+
+On peut mettre l'include dans `templates/base.html.twig`, pour éviter de devoir le faire sur toutes les pages (on le retire de l'index et about)
+
+```twig
+ <body>
+        {% block nav %}
+            {% include 'home/menu.html.twig' %}
+        {% endblock %}
+        {% block body %}{% endblock %}
+    </body>
+```
+
+### Mise en forme des formulaires et des pages avec `bootstrap`
+
+Nous allons utiliser les assets qui se trouvent dans le dossier `assets`
+
+Documentation :
+
+Différence AssetMapper et Webpack Encore : https://symfony.com/doc/6.4/frontend.html#using-php-twig
+
+### `AssetMapper`
+
+Documentation : https://symfony.com/doc/6.4/frontend/asset_mapper.html
+
+On va importer bootstrap
+
+    php bin/console importmap:require bootstrap
+
+    [OK] 3 new items (bootstrap, @popperjs/core, bootstrap/dist/css/bootstrap.min.css) added to the importmap.php!
+
+La mise à jour a été effectuée uniquement dans `importmap.php`
+
+Pour tester, on va d'abord trouver les templates `bootstrap` à cette adresse : https://symfony.com/doc/current/form/form_themes.html
+
+Donc pour les formulaires `bootstrap`
+
+```yaml
+# config/packages/twig.yaml
+twig:
+form_themes: ['bootstrap_5_horizontal_layout.html.twig']
+# ...
+```
+
+Le code `bootstrap` est généré, mais il manque le style !
+
+dans `assets/app.js` on ajoute le lien vers le `css`
+
+```js
+import './vendor/bootstrap/dist/css/bootstrap.min.css';
+import './styles/app.css';
+```
+Et nos formulaires sont jolis !
+
+On peut utiliser toutes les classes de `bootstrap`
+
+## Manipulation des formulaires
